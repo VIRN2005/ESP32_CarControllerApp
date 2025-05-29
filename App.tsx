@@ -543,11 +543,10 @@ const App = () => {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {/* Header cyberpunk */}
           <View style={styles.header}>
             <View style={styles.headerGlow}>
-              <Text style={styles.headerTitle}>⚡ CAR REMOTE ⚡</Text>
-              <Text style={styles.headerSubtitle}>CYBERPUNK CONTROLLER</Text>
+              <Text style={styles.headerTitle}>⚡ CAR REMOTE⚡</Text>
+              <Text style={styles.headerSubtitle}>ESP32 REMOTER CAR CONTROLLER</Text>
               <View style={styles.headerLine} />
               <View style={styles.bluetoothStatus}>
                 <View style={styles.statusIndicator}>
