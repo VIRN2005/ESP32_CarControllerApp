@@ -31,17 +31,22 @@ type SpeedCommand = `SPEED:${number}`;
 
 // Paleta de colores verde elegante
 const colors = {
-  primary: '#2E7D32',
-  primaryLight: '#81C784',
-  primaryDark: '#1B5E20',
-  secondary: '#AED581',
-  background: '#E8F5E9',
-  surface: '#FFFFFF',
-  accent: '#4CAF50',
-  error: '#C62828',
-  text: '#212121',
-  textSecondary: '#757575',
+  primary: '#00FFFF', // Cyan eléctrico
+  primaryLight: '#64FFDA', // Aqua brillante
+  primaryDark: '#00BCD4', // Cyan profundo
+  secondary: '#FF1744', // Rojo neón
+  background: '#0A0A0A', // Negro profundo
+  surface: '#1A1A2E', // Azul oscuro
+  accent: '#E91E63', // Rosa eléctrico
+  error: '#FF073A', // Rojo intenso
+  success: '#00E676', // Verde neón
+  warning: '#FFD600', // Amarillo eléctrico
+  text: '#FFFFFF', // Blanco puro
+  textSecondary: '#B0BEC5', // Gris claro
   white: '#FFFFFF',
+  neonGlow: '#00FFFF',
+  purpleNeon: '#9C27B0',
+  orangeNeon: '#FF6D00',
 };
 
 // UUIDs del servicio y característica
@@ -530,508 +535,672 @@ const App = () => {
 
   return (
     <View style={styles.container}>
-      
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Header elegante */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Car Remote Controller</Text>
-          <Text style={styles.headerSubtitle}>ESP32 Car Remote Control</Text>
-          <View style={styles.bluetoothStatus}>
-            <Text style={styles.bluetoothStatusText}>
-              Bluetooth: {bluetoothEnabled ? '✅ Activo' : '❌ Inactivo'}
-            </Text>
-          </View>
+      <View style={styles.backgroundGradient}>
+        <View style={styles.animatedBackground}>
+          <View style={[styles.floatingOrb, styles.orb1]} />
+          <View style={[styles.floatingOrb, styles.orb2]} />
+          <View style={[styles.floatingOrb, styles.orb3]} />
         </View>
 
-        {connectedDevice ? (
-          <>
-            {/* Tarjeta de estado */}
-            <View style={styles.statusCard}>
-              <Text style={styles.statusText}>
-                Conectado a:{' '}
-                <Text style={styles.deviceName}>{connectedDevice.name}</Text>
-              </Text>
-              <View style={styles.speedContainer}>
-                <Text style={styles.speedLabel}>VELOCIDAD</Text>
-                <Text style={styles.speedValue}>{speed}</Text>
-                <View style={styles.speedControls}>
-                  <TouchableOpacity
-                    style={[styles.circleButton, styles.speedDownButton]}
-                    onPress={decreaseSpeed}>
-                    <Text style={styles.buttonIcon}>-</Text>
-                  </TouchableOpacity>
-                  <View style={styles.speedBarContainer}>
-                    <View
-                      style={[
-                        styles.speedBar,
-                        {width: `${(speed / MAX_SPEED) * 100}%`},
-                      ]}
-                    />
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.circleButton, styles.speedUpButton]}
-                    onPress={increaseSpeed}>
-                    <Text style={styles.buttonIcon}>+</Text>
-                  </TouchableOpacity>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          {/* Header cyberpunk */}
+          <View style={styles.header}>
+            <View style={styles.headerGlow}>
+              <Text style={styles.headerTitle}>⚡ CAR REMOTE ⚡</Text>
+              <Text style={styles.headerSubtitle}>CYBERPUNK CONTROLLER</Text>
+              <View style={styles.headerLine} />
+              <View style={styles.bluetoothStatus}>
+                <View style={styles.statusIndicator}>
+                  <Text style={styles.bluetoothStatusText}>
+                    BLUETOOTH: {bluetoothEnabled ? '🟢 ONLINE' : '🔴 OFFLINE'}
+                  </Text>
                 </View>
               </View>
             </View>
-
-            {/* Selector de modo */}
-            <TouchableOpacity
-              style={styles.modeSelector}
-              onPress={toggleControlMode}>
-              <Text style={styles.modeSelectorText}>
-                {controlMode === 'buttons'
-                  ? 'CAMBIAR A JOYSTICK'
-                  : 'CAMBIAR A BOTONES'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Controles */}
-            {controlMode === 'buttons' ? (
-              <View style={styles.buttonControls}>
-                <TouchableOpacity
-                  style={[styles.controlButton, styles.forwardButton]}
-                  onPress={() => handleCommand('F')}>
-                  <Text style={styles.controlButtonText}>↑ ADELANTE</Text>
-                </TouchableOpacity>
-                <View style={styles.middleRow}>
-                  <TouchableOpacity
-                    style={[styles.controlButton, styles.leftButton]}
-                    onPress={() => handleCommand('L')}>
-                    <Text style={styles.controlButtonText}>← IZQUIERDA</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.controlButton, styles.stopButton]}
-                    onPress={() => handleCommand('S')}>
-                    <Text style={styles.controlButtonText}>■ DETENER</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.controlButton, styles.rightButton]}
-                    onPress={() => handleCommand('R')}>
-                    <Text style={styles.controlButtonText}>→ DERECHA</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity
-                  style={[styles.controlButton, styles.backwardButton]}
-                  onPress={() => handleCommand('B')}>
-                  <Text style={styles.controlButtonText}>↓ ATRÁS</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.joystickContainer}>
-                <View style={styles.joystickBackground}>
-                  <Text style={styles.joystickText}>MODO JOYSTICK</Text>
-                  <Text style={styles.joystickSubtext}>Próximamente...</Text>
-                  <View style={styles.joystickPlaceholder} />
-                </View>
-              </View>
-            )}
-
-            {/* Botón de desconexión */}
-            <TouchableOpacity
-              style={styles.disconnectButton}
-              onPress={disconnectDevice}>
-              <Text style={styles.disconnectButtonText}>
-                DESCONECTAR DISPOSITIVO
-              </Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <View style={styles.connectContainer}>
-            <Text style={styles.connectTitle}>🚗 No conectado</Text>
-            <Text style={styles.connectMessage}>
-              Conéctate a tu carrito ESP32 para comenzar la diversión
-            </Text>
-            <TouchableOpacity
-              style={styles.connectButton}
-              onPress={openBluetoothModal}>
-              <Text style={styles.connectButtonText}>
-                🔍 BUSCAR DISPOSITIVOS
-              </Text>
-            </TouchableOpacity>
           </View>
-        )}
-      </ScrollView>
 
-      {/* Modal de Bluetooth mejorado */}
-      {showBluetoothModal && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>📡 Dispositivos Bluetooth</Text>
+          {connectedDevice ? (
+            <>
+              {/* Panel de estado futurista */}
+              <View style={styles.statusPanel}>
+                <View style={styles.hologramEffect}>
+                  <Text style={styles.statusTitle}>🎯 DEVICE LOCKED</Text>
+                  <Text style={styles.deviceName}>
+                    TARGET: {connectedDevice.name}
+                  </Text>
 
-            {isScanning ? (
-              <View style={styles.scanningContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.scanningText}>
-                  Buscando dispositivos...
-                </Text>
-                <Text style={styles.scanningSubtext}>
-                  Asegúrate de que tu ESP32 esté encendido
-                </Text>
+                  <View style={styles.speedDisplay}>
+                    <Text style={styles.speedLabel}>POWER LEVEL</Text>
+                    <View style={styles.speedMeter}>
+                      <Text style={styles.speedValue}>{speed}</Text>
+                      <View style={styles.speedVisualizer}>
+                        <View
+                          style={[
+                            styles.speedBar,
+                            {width: `${(speed / MAX_SPEED) * 100}%`},
+                          ]}
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.speedControls}>
+                      <TouchableOpacity
+                        style={styles.neonButton}
+                        onPress={decreaseSpeed}>
+                        <Text style={styles.neonButtonText}>▼</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.neonButton}
+                        onPress={increaseSpeed}>
+                        <Text style={styles.neonButtonText}>▲</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
               </View>
-            ) : (
-              <ScrollView
-                style={styles.devicesList}
-                showsVerticalScrollIndicator={false}>
-                {devices.length > 0 ? (
-                  devices.map((device, index) => (
+
+              {/* Selector de modo futurista */}
+              <TouchableOpacity
+                style={styles.modeToggle}
+                onPress={toggleControlMode}>
+                <View style={styles.modeGlow}>
+                  <Text style={styles.modeText}>
+                    {controlMode === 'buttons'
+                      ? '🎮 SWITCH TO NEURAL'
+                      : '⚡ SWITCH TO MANUAL'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Controles épicos */}
+              {controlMode === 'buttons' ? (
+                <View style={styles.controlMatrix}>
+                  <View style={styles.matrixGlow}>
                     <TouchableOpacity
-                      key={device.id || index}
-                      style={styles.deviceItem}
-                      onPress={() => connectToDevice(device)}
-                      disabled={isConnecting}>
-                      <View style={styles.deviceIcon}>
-                        <Text style={styles.deviceIconText}>
-                          {device.icon || '📱'}
+                      style={[styles.controlButton, styles.forwardButton]}
+                      onPress={() => handleCommand('F')}>
+                      <View style={styles.buttonInner}>
+                        <Text style={styles.controlIcon}>⬆</Text>
+                        <Text style={styles.controlText}>FORWARD</Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <View style={styles.middleRow}>
+                      <TouchableOpacity
+                        style={[styles.controlButton, styles.leftButton]}
+                        onPress={() => handleCommand('L')}>
+                        <View style={styles.buttonInner}>
+                          <Text style={styles.controlIcon}>⬅</Text>
+                          <Text style={styles.controlText}>LEFT</Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.controlButton, styles.stopButton]}
+                        onPress={() => handleCommand('S')}>
+                        <View style={styles.buttonInner}>
+                          <Text style={styles.controlIcon}>⏹</Text>
+                          <Text style={styles.controlText}>STOP</Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.controlButton, styles.rightButton]}
+                        onPress={() => handleCommand('R')}>
+                        <View style={styles.buttonInner}>
+                          <Text style={styles.controlIcon}>➡</Text>
+                          <Text style={styles.controlText}>RIGHT</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[styles.controlButton, styles.backwardButton]}
+                      onPress={() => handleCommand('B')}>
+                      <View style={styles.buttonInner}>
+                        <Text style={styles.controlIcon}>⬇</Text>
+                        <Text style={styles.controlText}>REVERSE</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.neuralInterface}>
+                  <View style={styles.neuralGlow}>
+                    <Text style={styles.neuralTitle}>🧠 NEURAL INTERFACE</Text>
+                    <Text style={styles.neuralSubtext}>
+                      Mind control coming soon...
+                    </Text>
+                    <View style={styles.neuralOrb}>
+                      <View style={styles.neuralCore} />
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Botón de desconexión épico */}
+              <TouchableOpacity
+                style={styles.disconnectButton}
+                onPress={disconnectDevice}>
+                <View style={styles.disconnectGlow}>
+                  <Text style={styles.disconnectText}>
+                    🔥 TERMINATE CONNECTION 🔥
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.connectionHub}>
+              <View style={styles.hubGlow}>
+                <Text style={styles.hubTitle}>🛸 SCANNING MATRIX</Text>
+                <Text style={styles.hubSubtitle}>
+                  Connect to your cybernetic vehicle
+                </Text>
+                <TouchableOpacity
+                  style={styles.scanButton}
+                  onPress={openBluetoothModal}>
+                  <View style={styles.scanGlow}>
+                    <Text style={styles.scanText}>🔍 INITIATE SCAN</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Modal futurista */}
+        {showBluetoothModal && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalGlow}>
+                <Text style={styles.modalTitle}>🌐 DEVICE MATRIX</Text>
+
+                {isScanning ? (
+                  <View style={styles.scanningInterface}>
+                    <ActivityIndicator size="large" color={colors.neonGlow} />
+                    <Text style={styles.scanningText}>SCANNING NETWORK...</Text>
+                    <Text style={styles.scanningSubtext}>
+                      Detecting cybernetic signatures
+                    </Text>
+                  </View>
+                ) : (
+                  <ScrollView style={styles.deviceMatrix}>
+                    {devices.length > 0 ? (
+                      devices.map((device, index) => (
+                        <TouchableOpacity
+                          key={device.id || index}
+                          style={styles.deviceNode}
+                          onPress={() => connectToDevice(device)}>
+                          <View style={styles.deviceGlow}>
+                            <View style={styles.deviceIcon}>
+                              <Text style={styles.deviceIconText}>
+                                {device.icon || '🤖'}
+                              </Text>
+                            </View>
+                            <View style={styles.deviceData}>
+                              <Text style={styles.deviceNameText}>
+                                {device.name}
+                              </Text>
+                              <Text style={styles.deviceIdText}>
+                                {device.id}
+                              </Text>
+                            </View>
+                            {isConnecting && (
+                              <ActivityIndicator color={colors.neonGlow} />
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      ))
+                    ) : (
+                      <View style={styles.noDevicesFound}>
+                        <Text style={styles.noDevicesText}>
+                          NO SIGNALS DETECTED
+                        </Text>
+                        <Text style={styles.noDevicesSubtext}>
+                          Check your cybernetic implants
                         </Text>
                       </View>
-                      <View style={styles.deviceInfo}>
-                        <Text style={styles.deviceNameText}>{device.name}</Text>
-                        <Text style={styles.deviceIdText}>{device.id}</Text>
-                        {device.lastSeen && (
-                          <Text style={styles.deviceLastSeen}>
-                            Última vez visto:{' '}
-                            {new Date(device.lastSeen).toLocaleTimeString()}
-                          </Text>
-                        )}
-                      </View>
-                      {isConnecting && (
-                        <ActivityIndicator
-                          size="small"
-                          color={colors.primary}
-                        />
-                      )}
-                    </TouchableOpacity>
-                  ))
-                ) : (
-                  <View style={styles.noDevicesContainer}>
-                    <Text style={styles.noDevicesText}>
-                      No se encontraron dispositivos emparejados
-                    </Text>
-                    <Text style={styles.noDevicesSubtext}>
-                      Ve a Configuración → Bluetooth y empareja tu ESP32
-                    </Text>
-                  </View>
+                    )}
+                  </ScrollView>
                 )}
-              </ScrollView>
-            )}
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.scanAgainButton}
-                onPress={scanDevices}
-                disabled={isScanning}>
-                <Text style={styles.scanAgainText}>
-                  {isScanning ? 'BUSCANDO...' : '🔄 BUSCAR DE NUEVO'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.closeModalButton}
-                onPress={() => setShowBluetoothModal(false)}>
-                <Text style={styles.closeModalText}>❌ CERRAR</Text>
-              </TouchableOpacity>
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={styles.modalButton}
+                    onPress={scanDevices}>
+                    <Text style={styles.modalButtonText}>🔄 RESCAN</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.closeButton]}
+                    onPress={() => setShowBluetoothModal(false)}>
+                    <Text style={styles.modalButtonText}>❌ DISCONNECT</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </View>
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 };
 
+// Estilos épicos cyberpunk
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    resizeMode: 'cover',
-  },
   container: {
-    flexGrow: 1,
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  backgroundGradient: {
+    flex: 1,
+    backgroundColor: `linear-gradient(135deg, ${colors.background} 0%, ${colors.surface} 100%)`,
+  },
+  animatedBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  floatingOrb: {
+    position: 'absolute',
+    borderRadius: 100,
+    opacity: 0.1,
+  },
+  orb1: {
+    width: 200,
+    height: 200,
+    backgroundColor: colors.primary,
+    top: 100,
+    right: -50,
+  },
+  orb2: {
+    width: 150,
+    height: 150,
+    backgroundColor: colors.secondary,
+    bottom: 200,
+    left: -30,
+  },
+  orb3: {
+    width: 100,
+    height: 100,
+    backgroundColor: colors.purpleNeon,
+    top: 300,
+    left: 100,
+  },
+  scrollContainer: {
     padding: 20,
     paddingBottom: 40,
   },
   header: {
-    backgroundColor: 'rgba(30, 100, 30, 0.8)',
-    padding: 20,
-    borderRadius: 15,
     marginBottom: 30,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 5},
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
+  },
+  headerGlow: {
+    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+    borderRadius: 20,
+    padding: 25,
+    borderWidth: 2,
+    borderColor: colors.neonGlow,
+    shadowColor: colors.neonGlow,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 20,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.white,
+    fontSize: 32,
+    fontWeight: '900',
+    color: colors.neonGlow,
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 3,
+    textShadowColor: colors.neonGlow,
+    textShadowOffset: {width: 0, height: 0},
+    textShadowRadius: 15,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: colors.secondary,
+    fontSize: 14,
+    color: colors.primaryLight,
     textAlign: 'center',
-    marginTop: 5,
-    fontWeight: '500',
+    marginTop: 8,
+    letterSpacing: 3,
+    fontWeight: '600',
   },
-  statusCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  headerLine: {
+    height: 2,
+    backgroundColor: colors.neonGlow,
+    marginVertical: 15,
+    shadowColor: colors.neonGlow,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 1,
+    shadowRadius: 10,
+  },
+  bluetoothStatus: {
+    alignItems: 'center',
+  },
+  statusIndicator: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
     borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: colors.success,
   },
-  statusText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: 15,
+  bluetoothStatusText: {
+    color: colors.text,
+    fontWeight: '700',
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  statusPanel: {
+    marginBottom: 25,
+  },
+  hologramEffect: {
+    backgroundColor: 'rgba(26, 26, 46, 0.9)',
+    borderRadius: 20,
+    padding: 25,
+    borderWidth: 2,
+    borderColor: colors.primaryLight,
+    shadowColor: colors.primaryLight,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+    elevation: 15,
+  },
+  statusTitle: {
+    fontSize: 18,
+    color: colors.success,
+    fontWeight: '800',
     textAlign: 'center',
+    marginBottom: 10,
+    letterSpacing: 2,
   },
   deviceName: {
-    fontWeight: 'bold',
-    color: colors.primaryDark,
+    fontSize: 16,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '600',
   },
-  speedContainer: {
+  speedDisplay: {
     alignItems: 'center',
   },
   speedLabel: {
     fontSize: 12,
     color: colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: 5,
+    letterSpacing: 2,
+    marginBottom: 10,
+    fontWeight: '600',
+  },
+  speedMeter: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
   speedValue: {
-    fontSize: 42,
-    fontWeight: 'bold',
-    color: colors.primaryDark,
+    fontSize: 48,
+    fontWeight: '900',
+    color: colors.warning,
+    textShadowColor: colors.warning,
+    textShadowOffset: {width: 0, height: 0},
+    textShadowRadius: 10,
     marginBottom: 15,
   },
-  speedControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-  },
-  circleButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  speedUpButton: {
-    backgroundColor: colors.primary,
-  },
-  speedDownButton: {
-    backgroundColor: colors.accent,
-  },
-  buttonIcon: {
-    fontSize: 24,
-    color: colors.white,
-    fontWeight: 'bold',
-  },
-  speedBarContainer: {
-    flex: 1,
-    height: 10,
-    backgroundColor: colors.background,
-    borderRadius: 5,
-    marginHorizontal: 15,
+  speedVisualizer: {
+    width: 200,
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.neonGlow,
   },
   speedBar: {
     height: '100%',
-    backgroundColor: colors.primaryLight,
-    borderRadius: 5,
+    backgroundColor: colors.warning,
+    shadowColor: colors.warning,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 1,
+    shadowRadius: 8,
   },
-  modeSelector: {
-    backgroundColor: colors.primaryDark,
-    padding: 15,
-    borderRadius: 30,
-    marginVertical: 15,
+  speedControls: {
+    flexDirection: 'row',
+    marginTop: 15,
+    gap: 20,
+  },
+  neonButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 23, 68, 0.2)',
     borderWidth: 2,
     borderColor: colors.secondary,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  modeSelectorText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    letterSpacing: 1,
-  },
-  buttonControls: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 5},
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  controlButton: {
-    padding: 18,
-    borderRadius: 12,
-    marginVertical: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowColor: colors.secondary,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+  },
+  neonButtonText: {
+    color: colors.secondary,
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  modeToggle: {
+    marginVertical: 20,
+  },
+  modeGlow: {
+    backgroundColor: 'rgba(156, 39, 176, 0.2)',
+    borderRadius: 25,
+    padding: 18,
+    borderWidth: 2,
+    borderColor: colors.purpleNeon,
+    shadowColor: colors.purpleNeon,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
+  },
+  modeText: {
+    color: colors.purpleNeon,
+    fontWeight: '800',
+    textAlign: 'center',
+    fontSize: 16,
+    letterSpacing: 1,
+  },
+  controlMatrix: {
+    marginVertical: 20,
+  },
+  matrixGlow: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 25,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: colors.neonGlow,
+    shadowColor: colors.neonGlow,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+  },
+  controlButton: {
+    marginVertical: 8,
+    borderRadius: 15,
+    borderWidth: 2,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 12,
+    elevation: 12,
   },
   forwardButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: 'rgba(0, 255, 255, 0.2)',
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
   },
   backwardButton: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: 'rgba(0, 188, 212, 0.2)',
+    borderColor: colors.primaryDark,
+    shadowColor: colors.primaryDark,
   },
   leftButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: 'rgba(233, 30, 99, 0.2)',
+    borderColor: colors.accent,
+    shadowColor: colors.accent,
     flex: 1,
-    marginRight: 10,
+    marginRight: 8,
   },
   rightButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: 'rgba(233, 30, 99, 0.2)',
+    borderColor: colors.accent,
+    shadowColor: colors.accent,
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 8,
   },
   stopButton: {
-    backgroundColor: colors.error,
+    backgroundColor: 'rgba(255, 7, 58, 0.2)',
+    borderColor: colors.error,
+    shadowColor: colors.error,
     width: 80,
   },
-  controlButtonText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.5,
+  buttonInner: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  controlIcon: {
+    fontSize: 24,
+    color: colors.text,
+    marginBottom: 5,
+  },
+  controlText: {
+    color: colors.text,
+    fontWeight: '700',
+    fontSize: 12,
+    letterSpacing: 1,
   },
   middleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  joystickContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 5},
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
+  neuralInterface: {
+    marginVertical: 20,
   },
-  joystickBackground: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: colors.primaryLight,
+  neuralGlow: {
+    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+    borderRadius: 25,
+    padding: 40,
+    borderWidth: 2,
+    borderColor: colors.purpleNeon,
+    shadowColor: colors.purpleNeon,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    alignItems: 'center',
+  },
+  neuralTitle: {
+    fontSize: 20,
+    color: colors.purpleNeon,
+    fontWeight: '800',
+    marginBottom: 10,
+    letterSpacing: 2,
+  },
+  neuralSubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 30,
+    fontStyle: 'italic',
+  },
+  neuralOrb: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(156, 39, 176, 0.3)',
+    borderWidth: 3,
+    borderColor: colors.purpleNeon,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 8,
-    borderColor: colors.primary,
+    shadowColor: colors.purpleNeon,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 1,
+    shadowRadius: 20,
   },
-  joystickText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginBottom: 20,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 2,
-  },
-  joystickPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primaryDark,
-    borderWidth: 4,
-    borderColor: colors.white,
+  neuralCore: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.purpleNeon,
+    shadowColor: colors.purpleNeon,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 1,
+    shadowRadius: 15,
   },
   disconnectButton: {
-    backgroundColor: colors.error,
-    padding: 15,
-    borderRadius: 30,
     marginTop: 30,
-    borderWidth: 2,
-    borderColor: '#FF8A80',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
   },
-  disconnectButtonText: {
-    color: colors.white,
-    fontWeight: 'bold',
+  disconnectGlow: {
+    backgroundColor: 'rgba(255, 7, 58, 0.2)',
+    borderRadius: 25,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: colors.error,
+    shadowColor: colors.error,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
+  },
+  disconnectText: {
+    color: colors.error,
+    fontWeight: '900',
     textAlign: 'center',
+    fontSize: 16,
     letterSpacing: 1,
   },
-  connectContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 20,
-    padding: 30,
-    alignItems: 'center',
+  connectionHub: {
     marginTop: 50,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 5},
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
   },
-  connectTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.primaryDark,
-    marginBottom: 10,
+  hubGlow: {
+    backgroundColor: 'rgba(26, 26, 46, 0.9)',
+    borderRadius: 25,
+    padding: 40,
+    borderWidth: 2,
+    borderColor: colors.neonGlow,
+    shadowColor: colors.neonGlow,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    alignItems: 'center',
   },
-  connectMessage: {
+  hubTitle: {
+    fontSize: 24,
+    color: colors.neonGlow,
+    fontWeight: '900',
+    marginBottom: 15,
+    letterSpacing: 2,
+  },
+  hubSubtitle: {
     fontSize: 16,
     color: colors.textSecondary,
+    marginBottom: 30,
     textAlign: 'center',
-    marginBottom: 25,
   },
-  connectButton: {
-    backgroundColor: colors.primary,
-    padding: 18,
-    borderRadius: 30,
+  scanButton: {
     width: '100%',
-    borderWidth: 2,
-    borderColor: colors.secondary,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
   },
-  connectButtonText: {
-    color: colors.white,
-    fontWeight: 'bold',
+  scanGlow: {
+    backgroundColor: 'rgba(0, 255, 255, 0.2)',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: colors.neonGlow,
+    shadowColor: colors.neonGlow,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
+  },
+  scanText: {
+    color: colors.neonGlow,
+    fontWeight: '800',
     textAlign: 'center',
+    fontSize: 18,
     letterSpacing: 1,
-    fontSize: 16,
   },
   modalOverlay: {
     position: 'absolute',
@@ -1039,159 +1208,144 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
     width: '100%',
     maxWidth: 400,
     maxHeight: '80%',
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 20,
+  },
+  modalGlow: {
+    backgroundColor: 'rgba(26, 26, 46, 0.95)',
+    borderRadius: 25,
+    padding: 25,
+    borderWidth: 2,
+    borderColor: colors.neonGlow,
+    shadowColor: colors.neonGlow,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 25,
   },
   modalTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.primaryDark,
+    color: colors.neonGlow,
+    fontWeight: '900',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
+    letterSpacing: 2,
   },
-  scanningContainer: {
+  scanningInterface: {
     padding: 40,
-    justifyContent: 'center',
     alignItems: 'center',
   },
   scanningText: {
-    marginTop: 15,
-    color: colors.textSecondary,
+    color: colors.primaryLight,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 20,
+    letterSpacing: 1,
   },
-  devicesList: {
+  scanningSubtext: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 10,
+    fontStyle: 'italic',
+  },
+  deviceMatrix: {
     maxHeight: 300,
   },
-  deviceItem: {
+  deviceNode: {
+    marginBottom: 15,
+  },
+  deviceGlow: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 15,
+    padding: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+    shadowColor: colors.primaryLight,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
   deviceIcon: {
-    backgroundColor: colors.primaryLight,
     width: 50,
     height: 50,
     borderRadius: 25,
+    backgroundColor: 'rgba(0, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+    borderWidth: 1,
+    borderColor: colors.neonGlow,
   },
   deviceIconText: {
-    fontSize: 24,
+    fontSize: 20,
   },
-  deviceInfo: {
+  deviceData: {
     flex: 1,
   },
   deviceNameText: {
-    fontSize: 16,
-    fontWeight: '500',
     color: colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 5,
   },
   deviceIdText: {
+    color: colors.textSecondary,
     fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 3,
+    fontFamily: 'monospace',
   },
-  modalButtons: {
-    flexDirection: 'row',
-    marginTop: 20,
-  },
-  scanAgainButton: {
-    flex: 1,
-    backgroundColor: colors.primaryLight,
-    padding: 15,
-    borderRadius: 10,
-    marginRight: 10,
-  },
-  scanAgainText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  closeModalButton: {
-    flex: 1,
-    backgroundColor: colors.error,
-    padding: 15,
-    borderRadius: 10,
-  },
-  closeModalText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  joystickSubtext: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    fontStyle: 'italic',
-    marginBottom: 15,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 2,
-  },
-  scanningSubtext: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 5,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  deviceLastSeen: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    marginTop: 2,
-    fontStyle: 'italic',
-  },
-  noDevicesContainer: {
-    padding: 30,
+  noDevicesFound: {
+    padding: 40,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   noDevicesText: {
+    color: colors.error,
     fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    fontWeight: '700',
     marginBottom: 10,
-    fontWeight: '500',
+    letterSpacing: 1,
   },
   noDevicesSubtext: {
-    fontSize: 12,
     color: colors.textSecondary,
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 18,
     fontStyle: 'italic',
   },
-  bluetoothStatus: {
-    marginTop: 10,
-    padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    alignSelf: 'center',
+  modalActions: {
+    flexDirection: 'row',
+    marginTop: 25,
+    gap: 15,
   },
-  bluetoothStatusText: {
-    color: colors.white,
-    fontWeight: '500',
+  modalButton: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 255, 255, 0.2)',
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 2,
+    borderColor: colors.neonGlow,
+    shadowColor: colors.neonGlow,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 10,
+  },
+  closeButton: {
+    backgroundColor: 'rgba(255, 7, 58, 0.2)',
+    borderColor: colors.error,
+    shadowColor: colors.error,
+  },
+  modalButtonText: {
+    color: colors.text,
+    fontWeight: '800',
+    textAlign: 'center',
     fontSize: 14,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'flex-start',
-    paddingBottom: 40,
+    letterSpacing: 1,
   },
 });
 
