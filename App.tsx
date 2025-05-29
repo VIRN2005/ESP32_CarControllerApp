@@ -1,130 +1,1197 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Easing,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
+import {BleManager, Device, State} from 'react-native-ble-plx';
+import {Buffer} from 'buffer';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+// Tipos mejorados para TypeScript
+interface BluetoothDevice {
+  id: string;
+  name: string;
+  address?: string;
+  lastSeen?: string;
+  deviceType?: string;
+  icon?: string;
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+type ControlMode = 'buttons' | 'joystick';
+type DirectionCommand = 'F' | 'B' | 'L' | 'R' | 'S';
+type SpeedCommand = `SPEED:${number}`;
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+// Paleta de colores verde elegante
+const colors = {
+  primary: '#2E7D32',
+  primaryLight: '#81C784',
+  primaryDark: '#1B5E20',
+  secondary: '#AED581',
+  background: '#E8F5E9',
+  surface: '#FFFFFF',
+  accent: '#4CAF50',
+  error: '#C62828',
+  text: '#212121',
+  textSecondary: '#757575',
+  white: '#FFFFFF',
+};
+
+// UUIDs del servicio y característica
+const SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+const CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+// Constantes
+const SCAN_DURATION = 5000; // 5 segundos
+const MIN_SPEED = 100;
+const MAX_SPEED = 255;
+const SPEED_INCREMENT = 20;
+
+const App = () => {
+  const [controlMode, setControlMode] = useState<ControlMode>('buttons');
+  const [showBluetoothModal, setShowBluetoothModal] = useState(false);
+  const [speed, setSpeed] = useState(200);
+  const [devices, setDevices] = useState<BluetoothDevice[]>([]);
+  const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [bluetoothEnabled, setBluetoothEnabled] = useState(false);
+  const [pulseAnim] = useState(new Animated.Value(1));
+
+  const bleManager = useRef<BleManager>(new BleManager()).current;
+  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const deviceConnectionRef = useRef<Device | null>(null);
+
+  // Verificar estado del Bluetooth al iniciar y configurar listeners
+  useEffect(() => {
+    const subscription = bleManager.onStateChange((state: State) => {
+      const isEnabled = state === 'PoweredOn';
+      setBluetoothEnabled(isEnabled);
+      console.log('Estado Bluetooth cambiado:', state);
+
+      if (!isEnabled && connectedDevice) {
+        // Si Bluetooth se apaga mientras estamos conectados
+        setConnectedDevice(null);
+        deviceConnectionRef.current = null;
+        Alert.alert(
+          'Bluetooth Desactivado',
+          'Se ha perdido la conexión porque el Bluetooth fue desactivado',
+        );
+      }
+    }, true);
+
+    return () => {
+      subscription.remove();
+      bleManager.destroy();
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+      if (deviceConnectionRef.current) {
+        deviceConnectionRef.current.cancelConnection().catch(() => {});
+      }
+    };
+  }, [bleManager, connectedDevice]);
+
+  // Animación de pulso para botones
+  const animatePulse = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(pulseAnim, {
+        toValue: 1.05,
+        duration: 150,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pulseAnim, {
+        toValue: 1,
+        duration: 150,
+        easing: Easing.ease,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [pulseAnim]);
+
+  // Método para verificar el estado del Bluetooth
+  const checkBluetoothStatus = useCallback(async (): Promise<boolean> => {
+    try {
+      const state = await bleManager.state();
+      const isEnabled = state === 'PoweredOn';
+      setBluetoothEnabled(isEnabled);
+      console.log('Bluetooth habilitado:', isEnabled);
+      return isEnabled;
+    } catch (error) {
+      console.error('Error verificando estado de Bluetooth:', error);
+      setBluetoothEnabled(false);
+      return false;
+    }
+  }, [bleManager]);
+
+  // Solicitar permisos de Bluetooth en Android
+  const requestBluetoothPermissions =
+    useCallback(async (): Promise<boolean> => {
+      if (Platform.OS !== 'android') {
+        return true; // En iOS no necesitamos estos permisos específicos
+      }
+
+      try {
+        console.log('Solicitando permisos de Android...');
+
+        let permissions;
+        if (Number(Platform.Version) >= 31) {
+          permissions = [
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          ];
+        } else {
+          permissions = [PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION];
+        }
+
+        const granted = await PermissionsAndroid.requestMultiple(permissions);
+        console.log('Permisos concedidos:', granted);
+
+        return Object.values(granted).every(
+          permission => permission === PermissionsAndroid.RESULTS.GRANTED,
+        );
+      } catch (error) {
+        console.error('Error solicitando permisos:', error);
+        return false;
+      }
+    }, []);
+
+  // Método para escanear dispositivos BLE
+  const scanDevices = useCallback(async () => {
+    if (isScanning) return;
+
+    setIsScanning(true);
+    setDevices([]);
+
+    try {
+      console.log('Iniciando escaneo de dispositivos BLE...');
+
+      // Verificar si Bluetooth está habilitado
+      const isEnabled = await checkBluetoothStatus();
+      if (!isEnabled) {
+        Alert.alert(
+          'Bluetooth Desactivado',
+          'Por favor activa el Bluetooth para continuar',
+          [
+            {
+              text: 'Cancelar',
+              style: 'cancel',
+              onPress: () => setIsScanning(false),
+            },
+            {
+              text: 'Activar',
+              onPress: () => {
+                Alert.alert(
+                  'Activar Bluetooth',
+                  'Por favor activa el Bluetooth manualmente en Configuración',
+                  [{text: 'OK'}],
+                );
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      // Solicitar permisos
+      const permissionsGranted = await requestBluetoothPermissions();
+      if (!permissionsGranted) {
+        setIsScanning(false);
+        Alert.alert(
+          'Permisos Requeridos',
+          'La aplicación necesita permisos de Bluetooth y ubicación para funcionar correctamente.',
+          [{text: 'OK'}],
+        );
+        return;
+      }
+
+      // Escanear dispositivos
+      bleManager.startDeviceScan(null, null, (error, device) => {
+        if (error) {
+          console.error('Error en escaneo:', error);
+          setIsScanning(false);
+          bleManager.stopDeviceScan();
+          return;
+        }
+
+        if (device?.name || device?.localName) {
+          setDevices(prevDevices => {
+            // Evitar duplicados
+            const deviceExists = prevDevices.some(d => d.id === device.id);
+            if (!deviceExists) {
+              return [
+                ...prevDevices,
+                {
+                  id: device.id,
+                  name:
+                    device.name ||
+                    device.localName ||
+                    'Dispositivo Desconocido',
+                  address: device.id,
+                  lastSeen: new Date().toISOString(),
+                  deviceType: 'ble',
+                  icon: getDeviceIcon(device.name || device.localName || ''),
+                },
+              ];
+            }
+            return prevDevices;
+          });
+        }
+      });
+
+      // Detener el escaneo después del tiempo definido
+      scanTimeoutRef.current = setTimeout(() => {
+        bleManager.stopDeviceScan();
+        setIsScanning(false);
+
+        if (devices.length === 0) {
+          Alert.alert(
+            'No hay dispositivos',
+            'No se encontraron dispositivos BLE.\n\nPara conectar tu ESP32:\n1. Asegúrate que esté encendido\n2. Que sea visible/discoverable',
+            [
+              {
+                text: 'OK',
+              },
+              {
+                text: 'Buscar nuevamente',
+                onPress: () => scanDevices(),
+              },
+            ],
+          );
+        }
+      }, SCAN_DURATION);
+    } catch (error: any) {
+      console.error('Error en scanDevices:', error);
+      handleBluetoothError(error);
+      setIsScanning(false);
+    }
+  }, [
+    bleManager,
+    checkBluetoothStatus,
+    isScanning,
+    requestBluetoothPermissions,
+    devices.length,
+  ]);
+
+  // Función auxiliar para obtener icono del dispositivo
+  const getDeviceIcon = (deviceName: string): string => {
+    if (!deviceName) return '📱';
+    const lowerName = deviceName.toLowerCase();
+    if (lowerName.includes('esp')) return '🚗';
+    if (lowerName.includes('hc')) return '📡';
+    return '📱';
   };
 
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
+  // Manejo de errores de Bluetooth
+  const handleBluetoothError = (error: any) => {
+    let errorMessage = 'Error desconocido al buscar dispositivos';
+    let errorTitle = 'Error de Bluetooth';
+
+    if (error.message) {
+      if (
+        error.message.includes('not enabled') ||
+        error.message.includes('disabled')
+      ) {
+        errorTitle = 'Bluetooth Desactivado';
+        errorMessage = 'Por favor activa el Bluetooth e inténtalo de nuevo';
+      } else if (
+        error.message.includes('permission') ||
+        error.message.includes('denied')
+      ) {
+        errorTitle = 'Permisos Insuficientes';
+        errorMessage =
+          'La aplicación necesita permisos de Bluetooth para continuar. Ve a Configuración > Aplicaciones > Permisos';
+      } else if (
+        error.message.includes('not available') ||
+        error.message.includes('not supported')
+      ) {
+        errorTitle = 'Bluetooth No Disponible';
+        errorMessage =
+          'Este dispositivo no soporta Bluetooth o no está disponible';
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+    }
+
+    Alert.alert(errorTitle, errorMessage, [
+      {
+        text: 'Cancelar',
+        style: 'cancel',
+      },
+      {
+        text: 'Reintentar',
+        onPress: () => scanDevices(),
+      },
+    ]);
+  };
+
+  // Método para conectar a dispositivo BLE
+  const connectToDevice = useCallback(
+    async (device: BluetoothDevice) => {
+      if (!device?.id || isConnecting) return;
+
+      setIsConnecting(true);
+
+      try {
+        console.log(`Intentando conectar a ${device.name} (${device.id})`);
+
+        // Verificar que Bluetooth esté habilitado antes de conectar
+        const isEnabled = await checkBluetoothStatus();
+        if (!isEnabled) {
+          Alert.alert('Error', 'Bluetooth no está habilitado');
+          setIsConnecting(false);
+          return;
+        }
+
+        // Intentar conexión con timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout de conexión')), 10000),
+        );
+
+        const connectionPromise = bleManager.connectToDevice(device.id, {
+          autoConnect: false,
+          requestMTU: 128,
+        });
+
+        const connectedDevice = (await Promise.race([
+          connectionPromise,
+          timeoutPromise,
+        ])) as Device;
+        deviceConnectionRef.current = connectedDevice;
+
+        // Descubrir servicios y características
+        await connectedDevice.discoverAllServicesAndCharacteristics();
+
+        setConnectedDevice(connectedDevice);
+        setShowBluetoothModal(false);
+
+        Alert.alert(
+          '¡Conectado!',
+          `Control remoto conectado exitosamente a ${device.name}`,
+          [{text: 'OK'}],
+        );
+
+        console.log(`Conectado exitosamente a ${device.name}`);
+
+        // Escuchar desconexiones
+        connectedDevice.onDisconnected(() => {
+          console.log('Dispositivo desconectado');
+          handleDisconnection();
+        });
+      } catch (error: any) {
+        console.error('Error conectando dispositivo:', error);
+        handleConnectionError(error, device);
+      } finally {
+        setIsConnecting(false);
+      }
+    },
+    [bleManager, checkBluetoothStatus, isConnecting],
+  );
+
+  // Manejo de errores de conexión
+  const handleConnectionError = (error: any, device: BluetoothDevice) => {
+    let errorMessage = 'No se pudo conectar al dispositivo';
+    if (error.message) {
+      if (
+        error.message.includes('timeout') ||
+        error.message.includes('Timeout')
+      ) {
+        errorMessage =
+          'Tiempo de conexión agotado. Asegúrate de que el dispositivo esté cerca y encendido.';
+      } else if (error.message.includes('not found')) {
+        errorMessage =
+          'Dispositivo no encontrado. Verifica que esté encendido y en rango.';
+      } else {
+        errorMessage = `Error de conexión: ${error.message}`;
+      }
+    }
+
+    Alert.alert('Error de Conexión', errorMessage, [
+      {
+        text: 'Cancelar',
+        style: 'cancel',
+      },
+      {
+        text: 'Reintentar',
+        onPress: () => connectToDevice(device),
+      },
+    ]);
+  };
+
+  // Manejo de desconexión
+  const handleDisconnection = useCallback(() => {
+    setConnectedDevice(null);
+    deviceConnectionRef.current = null;
+    Alert.alert('Desconectado', 'El dispositivo se ha desconectado');
+  }, []);
+
+  // Enviar comando al dispositivo
+  const handleCommand = useCallback(
+    async (command: DirectionCommand | SpeedCommand) => {
+      animatePulse();
+
+      if (!connectedDevice || !deviceConnectionRef.current) {
+        Alert.alert(
+          'Conectar Dispositivo',
+          'Por favor conecta tu carrito primero',
+          [
+            {
+              text: 'Conectar',
+              onPress: () => {
+                setShowBluetoothModal(true);
+                scanDevices();
+              },
+              style: 'default',
+            },
+            {
+              text: 'Cancelar',
+              style: 'cancel',
+            },
+          ],
+        );
+        return;
+      }
+
+      console.log(`Comando enviado: ${command}`);
+
+      try {
+        // Convertir el comando a un ArrayBuffer
+        const buffer = Buffer.from(command, 'utf-8');
+        const base64Value = buffer.toString('base64');
+
+        // Escribir en la característica
+        await deviceConnectionRef.current.writeCharacteristicWithResponseForService(
+          SERVICE_UUID,
+          CHARACTERISTIC_UUID,
+          base64Value,
+        );
+
+        console.log(`Comando ${command} enviado exitosamente`);
+      } catch (error) {
+        console.error('Error enviando comando:', error);
+        Alert.alert('Error', 'No se pudo enviar el comando al dispositivo');
+
+        // Si hay error al enviar comando, asumimos desconexión
+        handleDisconnection();
+      }
+    },
+    [animatePulse, connectedDevice, handleDisconnection, scanDevices],
+  );
+
+  // Ajustar velocidad
+  const adjustSpeed = useCallback(
+    async (increment: boolean) => {
+      const newSpeed = Math.min(
+        MAX_SPEED,
+        Math.max(
+          MIN_SPEED,
+          increment ? speed + SPEED_INCREMENT : speed - SPEED_INCREMENT,
+        ),
+      );
+      setSpeed(newSpeed);
+      await handleCommand(`SPEED:${newSpeed}` as SpeedCommand);
+    },
+    [handleCommand, speed],
+  );
+
+  const increaseSpeed = useCallback(() => adjustSpeed(true), [adjustSpeed]);
+  const decreaseSpeed = useCallback(() => adjustSpeed(false), [adjustSpeed]);
+
+  const toggleControlMode = useCallback(() => {
+    animatePulse();
+    setControlMode(prev => (prev === 'buttons' ? 'joystick' : 'buttons'));
+  }, [animatePulse]);
+
+  const disconnectDevice = useCallback(async () => {
+    try {
+      if (deviceConnectionRef.current) {
+        await deviceConnectionRef.current.cancelConnection();
+      }
+      handleDisconnection();
+    } catch (error) {
+      console.error('Error desconectando:', error);
+      handleDisconnection();
+    }
+  }, [handleDisconnection]);
+
+  const openBluetoothModal = useCallback(() => {
+    setShowBluetoothModal(true);
+    scanDevices();
+  }, [scanDevices]);
 
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
+    <View style={styles.container}>
+      
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Header elegante */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Car Remote Controller</Text>
+          <Text style={styles.headerSubtitle}>ESP32 Car Remote Control</Text>
+          <View style={styles.bluetoothStatus}>
+            <Text style={styles.bluetoothStatusText}>
+              Bluetooth: {bluetoothEnabled ? '✅ Activo' : '❌ Inactivo'}
+            </Text>
+          </View>
         </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
+
+        {connectedDevice ? (
+          <>
+            {/* Tarjeta de estado */}
+            <View style={styles.statusCard}>
+              <Text style={styles.statusText}>
+                Conectado a:{' '}
+                <Text style={styles.deviceName}>{connectedDevice.name}</Text>
+              </Text>
+              <View style={styles.speedContainer}>
+                <Text style={styles.speedLabel}>VELOCIDAD</Text>
+                <Text style={styles.speedValue}>{speed}</Text>
+                <View style={styles.speedControls}>
+                  <TouchableOpacity
+                    style={[styles.circleButton, styles.speedDownButton]}
+                    onPress={decreaseSpeed}>
+                    <Text style={styles.buttonIcon}>-</Text>
+                  </TouchableOpacity>
+                  <View style={styles.speedBarContainer}>
+                    <View
+                      style={[
+                        styles.speedBar,
+                        {width: `${(speed / MAX_SPEED) * 100}%`},
+                      ]}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.circleButton, styles.speedUpButton]}
+                    onPress={increaseSpeed}>
+                    <Text style={styles.buttonIcon}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            {/* Selector de modo */}
+            <TouchableOpacity
+              style={styles.modeSelector}
+              onPress={toggleControlMode}>
+              <Text style={styles.modeSelectorText}>
+                {controlMode === 'buttons'
+                  ? 'CAMBIAR A JOYSTICK'
+                  : 'CAMBIAR A BOTONES'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Controles */}
+            {controlMode === 'buttons' ? (
+              <View style={styles.buttonControls}>
+                <TouchableOpacity
+                  style={[styles.controlButton, styles.forwardButton]}
+                  onPress={() => handleCommand('F')}>
+                  <Text style={styles.controlButtonText}>↑ ADELANTE</Text>
+                </TouchableOpacity>
+                <View style={styles.middleRow}>
+                  <TouchableOpacity
+                    style={[styles.controlButton, styles.leftButton]}
+                    onPress={() => handleCommand('L')}>
+                    <Text style={styles.controlButtonText}>← IZQUIERDA</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.controlButton, styles.stopButton]}
+                    onPress={() => handleCommand('S')}>
+                    <Text style={styles.controlButtonText}>■ DETENER</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.controlButton, styles.rightButton]}
+                    onPress={() => handleCommand('R')}>
+                    <Text style={styles.controlButtonText}>→ DERECHA</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={[styles.controlButton, styles.backwardButton]}
+                  onPress={() => handleCommand('B')}>
+                  <Text style={styles.controlButtonText}>↓ ATRÁS</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.joystickContainer}>
+                <View style={styles.joystickBackground}>
+                  <Text style={styles.joystickText}>MODO JOYSTICK</Text>
+                  <Text style={styles.joystickSubtext}>Próximamente...</Text>
+                  <View style={styles.joystickPlaceholder} />
+                </View>
+              </View>
+            )}
+
+            {/* Botón de desconexión */}
+            <TouchableOpacity
+              style={styles.disconnectButton}
+              onPress={disconnectDevice}>
+              <Text style={styles.disconnectButtonText}>
+                DESCONECTAR DISPOSITIVO
+              </Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <View style={styles.connectContainer}>
+            <Text style={styles.connectTitle}>🚗 No conectado</Text>
+            <Text style={styles.connectMessage}>
+              Conéctate a tu carrito ESP32 para comenzar la diversión
+            </Text>
+            <TouchableOpacity
+              style={styles.connectButton}
+              onPress={openBluetoothModal}>
+              <Text style={styles.connectButtonText}>
+                🔍 BUSCAR DISPOSITIVOS
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
+
+      {/* Modal de Bluetooth mejorado */}
+      {showBluetoothModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>📡 Dispositivos Bluetooth</Text>
+
+            {isScanning ? (
+              <View style={styles.scanningContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles.scanningText}>
+                  Buscando dispositivos...
+                </Text>
+                <Text style={styles.scanningSubtext}>
+                  Asegúrate de que tu ESP32 esté encendido
+                </Text>
+              </View>
+            ) : (
+              <ScrollView
+                style={styles.devicesList}
+                showsVerticalScrollIndicator={false}>
+                {devices.length > 0 ? (
+                  devices.map((device, index) => (
+                    <TouchableOpacity
+                      key={device.id || index}
+                      style={styles.deviceItem}
+                      onPress={() => connectToDevice(device)}
+                      disabled={isConnecting}>
+                      <View style={styles.deviceIcon}>
+                        <Text style={styles.deviceIconText}>
+                          {device.icon || '📱'}
+                        </Text>
+                      </View>
+                      <View style={styles.deviceInfo}>
+                        <Text style={styles.deviceNameText}>{device.name}</Text>
+                        <Text style={styles.deviceIdText}>{device.id}</Text>
+                        {device.lastSeen && (
+                          <Text style={styles.deviceLastSeen}>
+                            Última vez visto:{' '}
+                            {new Date(device.lastSeen).toLocaleTimeString()}
+                          </Text>
+                        )}
+                      </View>
+                      {isConnecting && (
+                        <ActivityIndicator
+                          size="small"
+                          color={colors.primary}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View style={styles.noDevicesContainer}>
+                    <Text style={styles.noDevicesText}>
+                      No se encontraron dispositivos emparejados
+                    </Text>
+                    <Text style={styles.noDevicesSubtext}>
+                      Ve a Configuración → Bluetooth y empareja tu ESP32
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.scanAgainButton}
+                onPress={scanDevices}
+                disabled={isScanning}>
+                <Text style={styles.scanAgainText}>
+                  {isScanning ? 'BUSCANDO...' : '🔄 BUSCAR DE NUEVO'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.closeModalButton}
+                onPress={() => setShowBluetoothModal(false)}>
+                <Text style={styles.closeModalText}>❌ CERRAR</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  background: {
+    flex: 1,
+    resizeMode: 'cover',
   },
-  sectionTitle: {
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    backgroundColor: 'rgba(30, 100, 30, 0.8)',
+    padding: 20,
+    borderRadius: 15,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 5},
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.white,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 3,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: colors.secondary,
+    textAlign: 'center',
+    marginTop: 5,
+    fontWeight: '500',
+  },
+  statusCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  statusText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  deviceName: {
+    fontWeight: 'bold',
+    color: colors.primaryDark,
+  },
+  speedContainer: {
+    alignItems: 'center',
+  },
+  speedLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    letterSpacing: 1,
+    marginBottom: 5,
+  },
+  speedValue: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: colors.primaryDark,
+    marginBottom: 15,
+  },
+  speedControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+  },
+  circleButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  speedUpButton: {
+    backgroundColor: colors.primary,
+  },
+  speedDownButton: {
+    backgroundColor: colors.accent,
+  },
+  buttonIcon: {
     fontSize: 24,
-    fontWeight: '600',
+    color: colors.white,
+    fontWeight: 'bold',
   },
-  sectionDescription: {
-    marginTop: 8,
+  speedBarContainer: {
+    flex: 1,
+    height: 10,
+    backgroundColor: colors.background,
+    borderRadius: 5,
+    marginHorizontal: 15,
+    overflow: 'hidden',
+  },
+  speedBar: {
+    height: '100%',
+    backgroundColor: colors.primaryLight,
+    borderRadius: 5,
+  },
+  modeSelector: {
+    backgroundColor: colors.primaryDark,
+    padding: 15,
+    borderRadius: 30,
+    marginVertical: 15,
+    borderWidth: 2,
+    borderColor: colors.secondary,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  modeSelectorText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  buttonControls: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 5},
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  controlButton: {
+    padding: 18,
+    borderRadius: 12,
+    marginVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  forwardButton: {
+    backgroundColor: colors.primary,
+  },
+  backwardButton: {
+    backgroundColor: colors.primaryDark,
+  },
+  leftButton: {
+    backgroundColor: colors.accent,
+    flex: 1,
+    marginRight: 10,
+  },
+  rightButton: {
+    backgroundColor: colors.accent,
+    flex: 1,
+    marginLeft: 10,
+  },
+  stopButton: {
+    backgroundColor: colors.error,
+    width: 80,
+  },
+  controlButtonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  middleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  joystickContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 5},
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  joystickBackground: {
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 8,
+    borderColor: colors.primary,
+  },
+  joystickText: {
+    color: colors.white,
+    fontWeight: 'bold',
     fontSize: 18,
-    fontWeight: '400',
+    marginBottom: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 2,
   },
-  highlight: {
-    fontWeight: '700',
+  joystickPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primaryDark,
+    borderWidth: 4,
+    borderColor: colors.white,
+  },
+  disconnectButton: {
+    backgroundColor: colors.error,
+    padding: 15,
+    borderRadius: 30,
+    marginTop: 30,
+    borderWidth: 2,
+    borderColor: '#FF8A80',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  disconnectButtonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  connectContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    marginTop: 50,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 5},
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  connectTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.primaryDark,
+    marginBottom: 10,
+  },
+  connectMessage: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 25,
+  },
+  connectButton: {
+    backgroundColor: colors.primary,
+    padding: 18,
+    borderRadius: 30,
+    width: '100%',
+    borderWidth: 2,
+    borderColor: colors.secondary,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  connectButtonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    letterSpacing: 1,
+    fontSize: 16,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.primaryDark,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  scanningContainer: {
+    padding: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scanningText: {
+    marginTop: 15,
+    color: colors.textSecondary,
+  },
+  devicesList: {
+    maxHeight: 300,
+  },
+  deviceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.background,
+  },
+  deviceIcon: {
+    backgroundColor: colors.primaryLight,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  deviceIconText: {
+    fontSize: 24,
+  },
+  deviceInfo: {
+    flex: 1,
+  },
+  deviceNameText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  deviceIdText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  scanAgainButton: {
+    flex: 1,
+    backgroundColor: colors.primaryLight,
+    padding: 15,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  scanAgainText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  closeModalButton: {
+    flex: 1,
+    backgroundColor: colors.error,
+    padding: 15,
+    borderRadius: 10,
+  },
+  closeModalText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  joystickSubtext: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginBottom: 15,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 2,
+  },
+  scanningSubtext: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 5,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  deviceLastSeen: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+  noDevicesContainer: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noDevicesText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 10,
+    fontWeight: '500',
+  },
+  noDevicesSubtext: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+  bluetoothStatus: {
+    marginTop: 10,
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    alignSelf: 'center',
+  },
+  bluetoothStatusText: {
+    color: colors.white,
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'flex-start',
+    paddingBottom: 40,
   },
 });
 
