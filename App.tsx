@@ -1,9 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
   ActivityIndicator,
   Alert,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import {BleManager, Device, State} from 'react-native-ble-plx';
 import {Buffer} from 'buffer';
+import styles from './src/styles/styles';
 
 // Tipos mejorados para TypeScript
 interface BluetoothDevice {
@@ -54,15 +55,22 @@ const MIN_SPEED = 100;
 const MAX_SPEED = 255;
 const SPEED_INCREMENT = 20;
 
+const prueba = true;
+
 const App = () => {
   const [controlMode, setControlMode] = useState<ControlMode>('buttons');
   const [showBluetoothModal, setShowBluetoothModal] = useState(false);
   const [speed, setSpeed] = useState(200);
   const [devices, setDevices] = useState<BluetoothDevice[]>([]);
-  const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
+  //para editar vista
+  const [connectedDevice, setConnectedDevice] = useState<Device | null>(
+    prueba
+      ? ({ id: 'dev', name: 'ESP32-Simulado' } as Device)
+      : null
+  )
   const [isScanning, setIsScanning] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [bluetoothEnabled, setBluetoothEnabled] = useState(false);
+  const [bluetoothEnabled, setBluetoothEnabled] = useState(!prueba && false);
   const [pulseAnim] = useState(new Animated.Value(1));
 
   const bleManager = useRef<BleManager>(new BleManager()).current;
@@ -528,6 +536,7 @@ const App = () => {
     scanDevices();
   }, [scanDevices]);
 
+const isConnected = prueba || Boolean(connectedDevice)
   return (
     <View style={styles.container}>
       
@@ -542,8 +551,8 @@ const App = () => {
             </Text>
           </View>
         </View>
-
-        {connectedDevice ? (
+          {/* quitar isConnected */}
+        {connectedDevice && isConnected ? (
           <>
             {/* Tarjeta de estado */}
             <View style={styles.statusCard}>
@@ -739,460 +748,5 @@ const App = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    resizeMode: 'cover',
-  },
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    backgroundColor: 'rgba(30, 100, 30, 0.8)',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 30,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 5},
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.white,
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 3,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: colors.secondary,
-    textAlign: 'center',
-    marginTop: 5,
-    fontWeight: '500',
-  },
-  statusCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  statusText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  deviceName: {
-    fontWeight: 'bold',
-    color: colors.primaryDark,
-  },
-  speedContainer: {
-    alignItems: 'center',
-  },
-  speedLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: 5,
-  },
-  speedValue: {
-    fontSize: 42,
-    fontWeight: 'bold',
-    color: colors.primaryDark,
-    marginBottom: 15,
-  },
-  speedControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-  },
-  circleButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  speedUpButton: {
-    backgroundColor: colors.primary,
-  },
-  speedDownButton: {
-    backgroundColor: colors.accent,
-  },
-  buttonIcon: {
-    fontSize: 24,
-    color: colors.white,
-    fontWeight: 'bold',
-  },
-  speedBarContainer: {
-    flex: 1,
-    height: 10,
-    backgroundColor: colors.background,
-    borderRadius: 5,
-    marginHorizontal: 15,
-    overflow: 'hidden',
-  },
-  speedBar: {
-    height: '100%',
-    backgroundColor: colors.primaryLight,
-    borderRadius: 5,
-  },
-  modeSelector: {
-    backgroundColor: colors.primaryDark,
-    padding: 15,
-    borderRadius: 30,
-    marginVertical: 15,
-    borderWidth: 2,
-    borderColor: colors.secondary,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  modeSelectorText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    letterSpacing: 1,
-  },
-  buttonControls: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 5},
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  controlButton: {
-    padding: 18,
-    borderRadius: 12,
-    marginVertical: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  forwardButton: {
-    backgroundColor: colors.primary,
-  },
-  backwardButton: {
-    backgroundColor: colors.primaryDark,
-  },
-  leftButton: {
-    backgroundColor: colors.accent,
-    flex: 1,
-    marginRight: 10,
-  },
-  rightButton: {
-    backgroundColor: colors.accent,
-    flex: 1,
-    marginLeft: 10,
-  },
-  stopButton: {
-    backgroundColor: colors.error,
-    width: 80,
-  },
-  controlButtonText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  middleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  joystickContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 5},
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  joystickBackground: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 8,
-    borderColor: colors.primary,
-  },
-  joystickText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginBottom: 20,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 2,
-  },
-  joystickPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primaryDark,
-    borderWidth: 4,
-    borderColor: colors.white,
-  },
-  disconnectButton: {
-    backgroundColor: colors.error,
-    padding: 15,
-    borderRadius: 30,
-    marginTop: 30,
-    borderWidth: 2,
-    borderColor: '#FF8A80',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  disconnectButtonText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    letterSpacing: 1,
-  },
-  connectContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 20,
-    padding: 30,
-    alignItems: 'center',
-    marginTop: 50,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 5},
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  connectTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.primaryDark,
-    marginBottom: 10,
-  },
-  connectMessage: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 25,
-  },
-  connectButton: {
-    backgroundColor: colors.primary,
-    padding: 18,
-    borderRadius: 30,
-    width: '100%',
-    borderWidth: 2,
-    borderColor: colors.secondary,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  connectButtonText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    letterSpacing: 1,
-    fontSize: 16,
-  },
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '80%',
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.primaryDark,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  scanningContainer: {
-    padding: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanningText: {
-    marginTop: 15,
-    color: colors.textSecondary,
-  },
-  devicesList: {
-    maxHeight: 300,
-  },
-  deviceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.background,
-  },
-  deviceIcon: {
-    backgroundColor: colors.primaryLight,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  deviceIconText: {
-    fontSize: 24,
-  },
-  deviceInfo: {
-    flex: 1,
-  },
-  deviceNameText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  deviceIdText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 3,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    marginTop: 20,
-  },
-  scanAgainButton: {
-    flex: 1,
-    backgroundColor: colors.primaryLight,
-    padding: 15,
-    borderRadius: 10,
-    marginRight: 10,
-  },
-  scanAgainText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  closeModalButton: {
-    flex: 1,
-    backgroundColor: colors.error,
-    padding: 15,
-    borderRadius: 10,
-  },
-  closeModalText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  joystickSubtext: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    fontStyle: 'italic',
-    marginBottom: 15,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 2,
-  },
-  scanningSubtext: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 5,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  deviceLastSeen: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    marginTop: 2,
-    fontStyle: 'italic',
-  },
-  noDevicesContainer: {
-    padding: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  noDevicesText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 10,
-    fontWeight: '500',
-  },
-  noDevicesSubtext: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
-    fontStyle: 'italic',
-  },
-  bluetoothStatus: {
-    marginTop: 10,
-    padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    alignSelf: 'center',
-  },
-  bluetoothStatusText: {
-    color: colors.white,
-    fontWeight: '500',
-    fontSize: 14,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'flex-start',
-    paddingBottom: 40,
-  },
-});
 
 export default App;

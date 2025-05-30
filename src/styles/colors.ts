@@ -8,4 +8,16 @@ export const colors = {
   text: '#000000',
   textSecondary: '#757575',
   disabled: '#9e9e9e',
+
+  primaryG: '#2E7D32',
+  primaryLightG: '#81C784',
+  primaryDarkG: '#1B5E20',
+  secondaryG: '#AED581',
+  backgroundG: '#E8F5E9',
+  surfaceG: '#FFFFFF',
+  accentG: '#4CAF50',
+  errorG: '#C62828',
+  textG: '#212121',
+  textSecondaryG: '#757575',
+  whiteG: '#FFFFFF',
 };

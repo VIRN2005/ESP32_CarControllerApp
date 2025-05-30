@@ -6,6 +6,7 @@ export const globalStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     padding: 16,
+    
   },
   button: {
     backgroundColor: colors.primary,
