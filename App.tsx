@@ -1,11 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
+  Image,
+  ImageBackground,
+  StyleSheet,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
   Alert,
   Animated,
   Easing,
@@ -15,6 +20,9 @@ import {
 import {BleManager, Device, State} from 'react-native-ble-plx';
 import {Buffer} from 'buffer';
 import styles from './src/styles/styles';
+import LinearGradient from 'react-native-linear-gradient';
+import MotionGradientBackground from './src/assets/MotionGradientBackground';
+
 
 // Tipos mejorados para TypeScript
 interface BluetoothDevice {
@@ -44,7 +52,6 @@ const colors = {
   textSecondary: '#757575',
   white: '#FFFFFF',
 };
-
 // UUIDs del servicio y característica
 const SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
 const CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
@@ -76,6 +83,8 @@ const App = () => {
   const bleManager = useRef<BleManager>(new BleManager()).current;
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const deviceConnectionRef = useRef<Device | null>(null);
+
+  const { width, height } = useWindowDimensions();
 
   // Verificar estado del Bluetooth al iniciar y configurar listeners
   useEffect(() => {
@@ -536,40 +545,144 @@ const App = () => {
     scanDevices();
   }, [scanDevices]);
 
-const isConnected = prueba || Boolean(connectedDevice)
+const isConnected = prueba || Boolean(connectedDevice);
   return (
-    <View style={styles.container}>
+     <MotionGradientBackground loopDurationMs={8000} motionOpacity={0.08}>
+    
       
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Header elegante */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Car Remote Controller</Text>
-          <Text style={styles.headerSubtitle}>ESP32 Car Remote Control</Text>
-          <View style={styles.bluetoothStatus}>
-            <Text style={styles.bluetoothStatusText}>
-              Bluetooth: {bluetoothEnabled ? '✅ Activo' : '❌ Inactivo'}
-            </Text>
-          </View>
-        </View>
-          {/* quitar isConnected */}
-        {connectedDevice && isConnected ? (
-          <>
-            {/* Tarjeta de estado */}
-            <View style={styles.statusCard}>
-              <Text style={styles.statusText}>
-                Conectado a:{' '}
-                <Text style={styles.deviceName}>{connectedDevice.name}</Text>
+         
+        <View style={[ connectedDevice?styles.nav: styles.nav_disconnected]}> 
+          <LinearGradient colors={['#00ff75', '#005b5d']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                  style={styles.nav_bg} />
+               
+          <View style={styles.status}> 
+            <Image
+                  source={require('./src/assets/bluetooth.png')}
+                  style={styles.bth_icon}
+                  resizeMode="contain"/>
+            
+              {connectedDevice? (
+              <Text style={styles.statusText}>Conectado a:{' '}
+                <Text style={styles.deviceName}>{connectedDevice?connectedDevice.name:''}</Text>
               </Text>
-              <View style={styles.speedContainer}>
-                <Text style={styles.speedLabel}>VELOCIDAD</Text>
-                <Text style={styles.speedValue}>{speed}</Text>
-                <View style={styles.speedControls}>
-                  <TouchableOpacity
-                    style={[styles.circleButton, styles.speedDownButton]}
-                    onPress={decreaseSpeed}>
-                    <Text style={styles.buttonIcon}>-</Text>
-                  </TouchableOpacity>
-                  <View style={styles.speedBarContainer}>
+              ):(
+                <Text style={styles.statusText}>Sin conexión</Text>
+              )}
+                
+          </View>          
+              <Text style={styles.headerTitle}>CAR REMOTE CONTROLLER</Text>
+        </View>
+         {connectedDevice && isConnected ? (
+          <>
+
+            {/* Botón de desconexión */}
+            <TouchableOpacity
+              style={styles.disconnectButton}
+              onPress={disconnectDevice}>
+              <Text style={styles.disconnectButtonText}>
+                DESCONECTAR
+              </Text>
+            </TouchableOpacity>
+          </>
+        ):
+          <>
+          </>}
+        </View>{/* quitar isConnected */}
+        { (connectedDevice && isConnected )? (
+        <ImageBackground
+                  source={require('./src/assets/bg-box.png')}
+                  style={styles.circleBackground}
+                  resizeMode="contain"
+                >
+        <View style={styles.container}>  
+           <View style={styles.buttonsContainer}>
+            <View style={styles.circularButtonWrapper}>
+              <Image
+                source={require('./src/assets/bg-button.png')}
+                style={styles.circleImage}
+                resizeMode="contain"
+              />
+
+              <View style={styles.dividerLineL} />
+
+              {/* 3) avanzar */}
+              <TouchableOpacity
+                onPress={() => handleCommand('F')}
+                style={[styles.arrowTouchArea, styles.arrowUp]}
+              >
+                <Image
+                  source={require('./src/assets/arrow-up.png')}
+                  style={styles.arrowIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+
+              {/* 4) Retroceder */}
+              <TouchableOpacity
+                onPress={() => handleCommand('B')}
+                style={[styles.arrowTouchArea, styles.arrowDown]}
+              >
+                
+                <Image
+                  source={require('./src/assets/arrow-down.png')}
+                  style={styles.arrowIcon}
+                  resizeMode="contain"
+                  
+                />
+              </TouchableOpacity>
+            </View>
+            <View style= {styles.speedContainer}>
+               <Image
+                source={require('./src/assets/speedometer.png')}
+                style={styles.speedLabel}
+                resizeMode="contain"            
+              />
+              <Text style={styles.speedValue}>
+                200
+              </Text>
+            </View>
+              
+            {/* derecha */}
+            <View style={styles.circularButtonWrapper}>
+              <Image
+                source={require('./src/assets/bg-button.png')}
+                style={styles.circleImage}
+                resizeMode="contain"
+              />
+
+              <View style={styles.dividerLineR} />
+
+              {/* izquierda*/}
+              <TouchableOpacity
+                onPress={() => handleCommand('L')}
+                style={[styles.arrowTouchArea, styles.arrowLeft]}
+              >
+                <Image
+                  source={require('./src/assets/arrow-left.png')}
+                  style={styles.arrowIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+
+              {/* Right arrow */}
+              <TouchableOpacity
+                onPress={() => handleCommand('R')}
+                style={[styles.arrowTouchArea, styles.arrowRight]}
+              >
+                <Image
+                  source={require('./src/assets/arrow-right.png')}
+                  style={styles.arrowIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+      </View>
+       <View style={styles.speedControls}>           
+            <View style={styles.speedBarContainer}>
                     <View
                       style={[
                         styles.speedBar,
@@ -577,77 +690,9 @@ const isConnected = prueba || Boolean(connectedDevice)
                       ]}
                     />
                   </View>
-                  <TouchableOpacity
-                    style={[styles.circleButton, styles.speedUpButton]}
-                    onPress={increaseSpeed}>
-                    <Text style={styles.buttonIcon}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            {/* Selector de modo */}
-            <TouchableOpacity
-              style={styles.modeSelector}
-              onPress={toggleControlMode}>
-              <Text style={styles.modeSelectorText}>
-                {controlMode === 'buttons'
-                  ? 'CAMBIAR A JOYSTICK'
-                  : 'CAMBIAR A BOTONES'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Controles */}
-            {controlMode === 'buttons' ? (
-              <View style={styles.buttonControls}>
-                <TouchableOpacity
-                  style={[styles.controlButton, styles.forwardButton]}
-                  onPress={() => handleCommand('F')}>
-                  <Text style={styles.controlButtonText}>↑ ADELANTE</Text>
-                </TouchableOpacity>
-                <View style={styles.middleRow}>
-                  <TouchableOpacity
-                    style={[styles.controlButton, styles.leftButton]}
-                    onPress={() => handleCommand('L')}>
-                    <Text style={styles.controlButtonText}>← IZQUIERDA</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.controlButton, styles.stopButton]}
-                    onPress={() => handleCommand('S')}>
-                    <Text style={styles.controlButtonText}>■ DETENER</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.controlButton, styles.rightButton]}
-                    onPress={() => handleCommand('R')}>
-                    <Text style={styles.controlButtonText}>→ DERECHA</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity
-                  style={[styles.controlButton, styles.backwardButton]}
-                  onPress={() => handleCommand('B')}>
-                  <Text style={styles.controlButtonText}>↓ ATRÁS</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.joystickContainer}>
-                <View style={styles.joystickBackground}>
-                  <Text style={styles.joystickText}>MODO JOYSTICK</Text>
-                  <Text style={styles.joystickSubtext}>Próximamente...</Text>
-                  <View style={styles.joystickPlaceholder} />
-                </View>
-              </View>
-            )}
-
-            {/* Botón de desconexión */}
-            <TouchableOpacity
-              style={styles.disconnectButton}
-              onPress={disconnectDevice}>
-              <Text style={styles.disconnectButtonText}>
-                DESCONECTAR DISPOSITIVO
-              </Text>
-            </TouchableOpacity>
-          </>
-        ) : (
+            </View>     
+      </ImageBackground>
+    ): (
           <View style={styles.connectContainer}>
             <Text style={styles.connectTitle}>🚗 No conectado</Text>
             <Text style={styles.connectMessage}>
@@ -662,9 +707,8 @@ const isConnected = prueba || Boolean(connectedDevice)
             </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
 
-      {/* Modal de Bluetooth mejorado */}
+    {/* Modal de Bluetooth mejorado */}
       {showBluetoothModal && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -745,7 +789,7 @@ const isConnected = prueba || Boolean(connectedDevice)
           </View>
         </View>
       )}
-    </View>
+    </MotionGradientBackground>
   );
 };
 

@@ -8,44 +8,119 @@ export default StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    padding: 20,
+    paddingTop: 5,
+    fontFamily: 'Open Sans',   
+    paddingRight:20,
     paddingBottom: 40,
     
   },
-  header: {
-    backgroundColor: 'rgba(30, 100, 30, 0.8)',
-    padding: 20,
-    borderRadius: 15,
+
+   circleBackground: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  header:{    
+    top:30,
+    right: 5,
+    flexDirection: 'row',    
+  },
+  nav: {
+    backgroundColor: '#00764f',
+    padding: 10,  
     marginBottom: 30,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginRight:10, 
+    width:'75%',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 5},
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  nav_disconnected:{
+    backgroundColor: '#00764f',
+    padding: 10,  
+    marginBottom: 30,
+    marginRight:10, 
+    width:'100%',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 5},
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  status:{
+    marginLeft:20,
+    flexDirection: 'row',
+     justifyContent: 'space-between',
+     alignItems: 'center',
+  },
+  nav_bg: {
+     position: 'absolute',
+    borderWidth: 2,
+    borderRadius:5,
+    borderColor: 'rgb(0, 0, 0)',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 5},
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+     opacity: 0.6,
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 16,
     fontWeight: 'bold',
     color: colors.whiteG,
-    textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: {width: 1, height: 1},
     textShadowRadius: 3,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: colors.secondaryG,
+    fontSize: 14,
+    color: '#fcb1fb',
     textAlign: 'center',
     marginTop: 5,
     fontWeight: '500',
+  },
+
+   disconnectButton: {
+    backgroundColor: colors.errorG,
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 30,
+    borderWidth: 2,
+    width: '20%',
+    justifyContent: 'center',
+    borderColor: colors.secondaryG,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  disconnectButtonText: {
+    color: colors.whiteG,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    letterSpacing: 1,
   },
   statusCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 15,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.2,
@@ -54,16 +129,89 @@ export default StyleSheet.create({
   },
   statusText: {
     fontSize: 16,
-    color: colors.textSecondaryG,
-    marginBottom: 15,
-    textAlign: 'center',
+    fontWeight: 'bold',
+    marginLeft:10,
+    color: colors.whiteG,
   },
   deviceName: {
     fontWeight: 'bold',
-    color: colors.primaryDarkG,
+    color: colors.accentG,
   },
+
+   buttonsContainer: {
+    marginLeft: '-4%',
+    width:'90%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: '6%',
+  },
+  circularButtonWrapper: {
+    width: 200,
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  circleImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  dividerLineL: {
+    position: 'absolute',
+    top: '50%',
+    width: '80%',             
+    left: '10%',
+    right: 0,
+    height: 5,              
+    backgroundColor: '#1c1c1c', 
+    opacity: 0.8,
+  },
+
+   dividerLineR: {
+    position: 'absolute',
+    left: '50%',
+    height: '80%',            
+    top: '10%',
+    right: 0,
+    width: 5,              
+    backgroundColor: '#1c1c1c', 
+    opacity: 0.8,
+  },
+
+  arrowTouchArea: {
+    position: 'absolute',
+    width: 80,              
+    height: 80,             
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowIcon: {
+    width: 50,
+    height: 50,
+    tintColor: colors.accentP,   
+  },
+
+  
+  arrowUp: {
+    top: 20,
+  },
+  arrowDown: {
+    bottom: 20,
+  },
+  arrowLeft: {
+    left: 20,
+  },
+  arrowRight: {
+    right: 20,
+  },
+
+
   speedContainer: {
     alignItems: 'center',
+    position: 'relative',
   },
   speedLabel: {
     fontSize: 12,
@@ -72,15 +220,20 @@ export default StyleSheet.create({
     marginBottom: 5,
   },
   speedValue: {
-    fontSize: 42,
+    fontSize: 40,
     fontWeight: 'bold',
-    color: colors.primaryDarkG,
+    color: colors.whiteG,
     marginBottom: 15,
+    position: 'absolute',
+    top: '55%',
   },
   speedControls: {
+    position: 'absolute',
+    top: '80%',
+    left:'43%',
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
+    width: '35%',
     justifyContent: 'space-between',
     paddingHorizontal: 10,
   },
@@ -97,10 +250,10 @@ export default StyleSheet.create({
     elevation: 3,
   },
   speedUpButton: {
-    backgroundColor: colors.primaryG,
+    backgroundColor: colors.secondaryG,
   },
   speedDownButton: {
-    backgroundColor: colors.accentG,
+    backgroundColor: colors.secondaryG,
   },
   buttonIcon: {
     fontSize: 24,
@@ -117,14 +270,15 @@ export default StyleSheet.create({
   },
   speedBar: {
     height: '100%',
-    backgroundColor: colors.primaryLightG,
+    backgroundColor: colors.accentP,
     borderRadius: 5,
+    borderColor: colors.primaryG,
   },
   modeSelector: {
-    backgroundColor: colors.primaryDarkG,
+    backgroundColor: colors.secondaryDark,
     padding: 15,
     borderRadius: 30,
-    marginVertical: 15,
+    marginVertical: 10,
     borderWidth: 2,
     borderColor: colors.secondaryG,
     shadowColor: '#000',
@@ -142,13 +296,15 @@ export default StyleSheet.create({
   buttonControls: {
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
+    padding: 10,
+    marginTop:15,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 5},
     shadowOpacity: 0.2,
     shadowRadius: 10,
     elevation: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   controlButton: {
     padding: 18,
@@ -163,23 +319,40 @@ export default StyleSheet.create({
     elevation: 3,
   },
   forwardButton: {
-    backgroundColor: colors.primaryG,
+    backgroundColor: colors.secondaryG,
+    borderWidth: 2,
+    borderColor: colors.secondaryG,
+    width: 80,
   },
   backwardButton: {
-    backgroundColor: colors.primaryDarkG,
+    backgroundColor: colors.secondaryG,
+    borderWidth: 2,
+    borderColor: colors.secondaryG,
+     width: 80,
   },
-  leftButton: {
-    backgroundColor: colors.accentG,
+  leftButtonO: {
+    backgroundColor: colors.secondaryG,
+    borderWidth: 2,
+    borderColor: colors.secondaryG,
     flex: 1,
     marginRight: 10,
+    marginLeft:25,
+    width: 80,
   },
-  rightButton: {
-    backgroundColor: colors.accentG,
+  rightButtonO: {
+    backgroundColor: colors.secondaryG,
+    borderWidth: 2,
+    borderColor: colors.secondaryG,  
     flex: 1,
     marginLeft: 10,
+    marginRight: 25,
+    width: 80,
+    
   },
   stopButton: {
-    backgroundColor: colors.errorG,
+    backgroundColor: colors.accentG,
+    borderWidth: 2,
+    borderColor: colors.secondaryG,
     width: 80,
   },
   controlButtonText: {
@@ -232,25 +405,7 @@ export default StyleSheet.create({
     borderWidth: 4,
     borderColor: colors.whiteG,
   },
-  disconnectButton: {
-    backgroundColor: colors.error,
-    padding: 15,
-    borderRadius: 30,
-    marginTop: 30,
-    borderWidth: 2,
-    borderColor: '#FF8A80',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  disconnectButtonText: {
-    color: colors.whiteG,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    letterSpacing: 1,
-  },
+
   connectContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
@@ -440,7 +595,10 @@ export default StyleSheet.create({
   },
   bluetoothStatus: {
     marginTop: 10,
-    padding: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingLeft: 15,
+    paddingRight: 15,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 20,
     alignSelf: 'center',
@@ -450,9 +608,19 @@ export default StyleSheet.create({
     fontWeight: '500',
     fontSize: 14,
   },
-  scrollContainer: {
+/* scrollContainer: {
     flexGrow: 1,
     justifyContent: 'flex-start',
     paddingBottom: 40,
+  }, */
+  bth_icon: {
+    width: 18,
+    height: 18,
+    tintColor: '#FFFFFF',
+  },
+  icon: {
+    width: 32,
+    height: 32,
+    tintColor: '#FFFFFF', 
   },
 });
