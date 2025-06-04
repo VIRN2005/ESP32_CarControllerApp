@@ -103,7 +103,7 @@ export default StyleSheet.create({
     borderWidth: 2,
     width: '20%',
     justifyContent: 'center',
-    borderColor: colors.secondaryG,
+    borderColor: colors.accentP,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.3,
@@ -139,7 +139,7 @@ export default StyleSheet.create({
   },
 
    buttonsContainer: {
-    marginLeft: '-4%',
+    marginLeft: '-6%',
     width:'90%',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -208,16 +208,27 @@ export default StyleSheet.create({
     right: 20,
   },
 
-
+  
   speedContainer: {
     alignItems: 'center',
     position: 'relative',
   },
   speedLabel: {
+    marginTop:40,
     fontSize: 12,
     color: colors.textSecondaryG,
     letterSpacing: 1,
     marginBottom: 5,
+    width:160,
+    height:160,
+  },
+  speedLabel2: {
+    fontSize:10,
+    fontWeight: 'bold',
+    color: colors.whiteG,
+    marginBottom: 15,
+    position: 'absolute',
+    top: '79%',
   },
   speedValue: {
     fontSize: 40,
@@ -257,41 +268,71 @@ export default StyleSheet.create({
   },
   buttonIcon: {
     fontSize: 24,
-    color: colors.whiteG,
+    color: colors.primaryG,
     fontWeight: 'bold',
   },
   speedBarContainer: {
     flex: 1,
-    height: 10,
+     borderWidth: 1,
+    borderColor: colors.primaryG,
     backgroundColor: colors.backgroundG,
     borderRadius: 5,
     marginHorizontal: 15,
-    overflow: 'hidden',
+    
+
   },
   speedBar: {
-    height: '100%',
+    height: '30%',
     backgroundColor: colors.accentP,
     borderRadius: 5,
     borderColor: colors.primaryG,
   },
-  modeSelector: {
-    backgroundColor: colors.secondaryDark,
-    padding: 15,
-    borderRadius: 30,
-    marginVertical: 10,
-    borderWidth: 2,
-    borderColor: colors.secondaryG,
+   diamondThumb: {
+    width: 12,
+    height: 12,
+    backgroundColor:'#00E676',
+    borderWidth: 1,
+    borderColor: '#00E676',        // bright green border
+    transform: [{ rotate: '45deg' }],
+    
+    position: 'absolute',
+    borderRadius: 20, // give a slight rounding if you like (optional)
+    elevation: 3,    // Android shadow
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowRadius: 2,
+  },
+  selectorContainer:{
+    position:'absolute',
+    top:'21%',
+    left:'13%',
+    zIndex: 999,             
+    elevation: 999, 
+  },
+  modebtn:{
+    width:180,
+    height:90,
+  },
+  modeSelector: {
+/*     backgroundColor:colors.primaryG, */
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 120,
+    height: 50,
+  position: 'absolute',
+    top: '17%',
+    padding: 15,
+    marginVertical: 10,
   },
   modeSelectorText: {
+    width:180,
     color: colors.whiteG,
     fontWeight: 'bold',
     textAlign: 'center',
-    letterSpacing: 1,
+    fontSize: 10,
+    position:'absolute',
+    letterSpacing: 1, 
   },
   buttonControls: {
     backgroundColor: 'rgba(255, 255, 255, 0.85)',

@@ -16,13 +16,17 @@ import {
   Easing,
   PermissionsAndroid,
   Platform,
+  LayoutChangeEvent,
+  GestureResponderEvent,
+  NativeSyntheticEvent,
+  TextLayoutEventData,
 } from 'react-native';
 import {BleManager, Device, State} from 'react-native-ble-plx';
 import {Buffer} from 'buffer';
 import styles from './src/styles/styles';
 import LinearGradient from 'react-native-linear-gradient';
 import MotionGradientBackground from './src/assets/MotionGradientBackground';
-
+import { TrapezoidButton } from './src/assets/ModeBtnn';
 
 // Tipos mejorados para TypeScript
 interface BluetoothDevice {
@@ -61,7 +65,7 @@ const SCAN_DURATION = 5000; // 5 segundos
 const MIN_SPEED = 100;
 const MAX_SPEED = 255;
 const SPEED_INCREMENT = 20;
-
+const BAR_HEIGHT = 10;
 const prueba = true;
 
 const App = () => {
@@ -546,11 +550,59 @@ const App = () => {
   }, [scanDevices]);
 
 const isConnected = prueba || Boolean(connectedDevice);
+ //control de speedbar
+const [barWidth, setBarWidth] = useState<number>(0);
+const [fillWidth, setFillWidth] = useState<number>(0);
+
+useEffect(() => {
+  if (barWidth <= 0) {
+    setFillWidth(0);
+    return;
+  }
+  const ratio = (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED);
+  const newWidth = ratio * barWidth;
+  setFillWidth(newWidth);
+}, [speed, barWidth]);
+
+const onBarLayout = useCallback(
+  (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    setBarWidth(w);
+  },
+  []
+);
+
+
+const onBarTouch = useCallback(
+  (e: GestureResponderEvent) => {
+
+    const x = e.nativeEvent.locationX;
+    if (barWidth <= 0) return;
+
+
+    let clampedX = x;
+    if (clampedX < 0) clampedX = 0;
+    if (clampedX > barWidth) clampedX = barWidth;
+
+
+    const ratio = clampedX / barWidth;
+    const newSpeed = Math.round(
+      MIN_SPEED + ratio * (MAX_SPEED - MIN_SPEED)
+    );
+
+    if (newSpeed !== speed) {
+      setSpeed(newSpeed);
+
+    }
+  },
+  [barWidth, speed]
+);
+
   return (
      <MotionGradientBackground loopDurationMs={8000} motionOpacity={0.08}>
     
       
-        {/* Header elegante */}
+        {/* Header  */}
         <View style={styles.header}>
          
         <View style={[ connectedDevice?styles.nav: styles.nav_disconnected]}> 
@@ -591,6 +643,24 @@ const isConnected = prueba || Boolean(connectedDevice);
           <>
           </>}
         </View>{/* quitar isConnected */}
+        <View style={styles.selectorContainer} >
+         <TouchableOpacity
+              style={styles.modeSelector}
+              onPress={toggleControlMode}> 
+               <Image
+                source={require('./src/assets/modo_btn.png')}
+                style={styles.modebtn}
+                resizeMode="contain"/> 
+          
+              <Text style={styles.modeSelectorText}>
+                {controlMode === 'buttons'
+                  ? 'CAMBIAR A JOYSTICK'
+                  : 'CAMBIAR A BOTONES'}
+              </Text>
+            </TouchableOpacity>         
+        </View>
+         
+
         { (connectedDevice && isConnected )? (
         <ImageBackground
                   source={require('./src/assets/bg-box.png')}
@@ -599,50 +669,59 @@ const isConnected = prueba || Boolean(connectedDevice);
                 >
         <View style={styles.container}>  
            <View style={styles.buttonsContainer}>
+            
             <View style={styles.circularButtonWrapper}>
               <Image
                 source={require('./src/assets/bg-button.png')}
                 style={styles.circleImage}
-                resizeMode="contain"
-              />
+                resizeMode="contain"/>
+               {controlMode === 'buttons' ? (
+                <>
+                  <View style={styles.dividerLineL} />
 
-              <View style={styles.dividerLineL} />
+                  {/* 3) avanzar */}
+                  <TouchableOpacity
+                    onPress={() => handleCommand('F')}
+                    style={[styles.arrowTouchArea, styles.arrowUp]}>
+                    <Image
+                      source={require('./src/assets/arrow-up.png')}
+                      style={styles.arrowIcon}
+                      resizeMode="contain"/>
+                  </TouchableOpacity>
 
-              {/* 3) avanzar */}
-              <TouchableOpacity
-                onPress={() => handleCommand('F')}
-                style={[styles.arrowTouchArea, styles.arrowUp]}
-              >
-                <Image
-                  source={require('./src/assets/arrow-up.png')}
-                  style={styles.arrowIcon}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-
-              {/* 4) Retroceder */}
-              <TouchableOpacity
-                onPress={() => handleCommand('B')}
-                style={[styles.arrowTouchArea, styles.arrowDown]}
-              >
-                
-                <Image
-                  source={require('./src/assets/arrow-down.png')}
-                  style={styles.arrowIcon}
-                  resizeMode="contain"
+                  {/* 4) Retroceder */}
+                  <TouchableOpacity
+                    onPress={() => handleCommand('B')}
+                    style={[styles.arrowTouchArea, styles.arrowDown]}>
+                    
+                    <Image
+                      source={require('./src/assets/arrow-down.png')}
+                      style={styles.arrowIcon}
+                      resizeMode="contain"
+                      
+                    />
+                  </TouchableOpacity>
+              </>
+            ):(
+                <View style={styles.joystickContainer}>
+                    <View style={styles.joystickBackground}>
+                      <Text style={styles.joystickText}>MODO JOYSTICK</Text>
+                      <Text style={styles.joystickSubtext}>Próximamente...</Text>
+                      <View style={styles.joystickPlaceholder} />
+                    </View>
+                  </View>
                   
-                />
-              </TouchableOpacity>
+            )}
             </View>
+            {/* 4) Informcion de velocidad*/}
             <View style= {styles.speedContainer}>
                <Image
                 source={require('./src/assets/speedometer.png')}
                 style={styles.speedLabel}
                 resizeMode="contain"            
               />
-              <Text style={styles.speedValue}>
-                200
-              </Text>
+              <Text style={styles.speedValue}>{speed}</Text>
+              <Text style={styles.speedLabel2}> VELOCIDAD</Text>
             </View>
               
             {/* derecha */}
@@ -650,11 +729,9 @@ const isConnected = prueba || Boolean(connectedDevice);
               <Image
                 source={require('./src/assets/bg-button.png')}
                 style={styles.circleImage}
-                resizeMode="contain"
-              />
+                resizeMode="contain"/>
 
-              <View style={styles.dividerLineR} />
-
+              <View style={styles.dividerLineR} />    
               {/* izquierda*/}
               <TouchableOpacity
                 onPress={() => handleCommand('L')}
@@ -675,22 +752,45 @@ const isConnected = prueba || Boolean(connectedDevice);
                 <Image
                   source={require('./src/assets/arrow-right.png')}
                   style={styles.arrowIcon}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
+                  resizeMode="contain"/>
+              </TouchableOpacity>               
+
             </View>
           </View>
       </View>
-       <View style={styles.speedControls}>           
-            <View style={styles.speedBarContainer}>
-                    <View
-                      style={[
-                        styles.speedBar,
-                        {width: `${(speed / MAX_SPEED) * 100}%`},
-                      ]}
-                    />
-                  </View>
-            </View>     
+      {/* 4) Control de velocidad*/}
+      <View style={styles.speedControls}>
+      {/* Left “−” label (optional) */}
+      <Text style={styles.buttonIcon}>−</Text>
+
+      <View
+        style={styles.speedBarContainer}
+        onLayout={onBarLayout}
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={onBarTouch}
+        onResponderMove={onBarTouch}
+      >
+        {/* Green fill up to fillWidth */}
+        <View style={[styles.speedBar, { width: fillWidth }]} />
+
+        {/* Diamond thumb */}
+        <View
+          style={[
+            styles.diamondThumb,
+            {
+              // Position the diamond’s center at fillWidth:
+              left: fillWidth - styles.diamondThumb.width! / 2,
+              // Vertically center it over the bar:
+              top: -(styles.diamondThumb.height! - BAR_HEIGHT) / 2,
+            },
+          ]}
+        />
+      </View>
+
+      {/* Right “+” label (optional) */}
+      <Text style={styles.buttonIcon}>+</Text>
+    </View>
+
       </ImageBackground>
     ): (
           <View style={styles.connectContainer}>
