@@ -26,7 +26,7 @@ import {Buffer} from 'buffer';
 import styles from './src/styles/styles';
 import LinearGradient from 'react-native-linear-gradient';
 import MotionGradientBackground from './src/assets/MotionGradientBackground';
-import { TrapezoidButton } from './src/assets/ModeBtnn';
+import { JoystickControl } from './src/components/JoystickControl';
 
 // Tipos mejorados para TypeScript
 interface BluetoothDevice {
@@ -616,11 +616,11 @@ const onBarTouch = useCallback(
                   style={styles.bth_icon}
                   resizeMode="contain"/>
             
-              {connectedDevice? (
+              {connectedDevice && isConnected? (
               <Text style={styles.statusText}>Conectado a:{' '}
                 <Text style={styles.deviceName}>{connectedDevice?connectedDevice.name:''}</Text>
               </Text>
-              ):(
+              ):( 
                 <Text style={styles.statusText}>Sin conexión</Text>
               )}
                 
@@ -643,6 +643,7 @@ const onBarTouch = useCallback(
           <>
           </>}
         </View>{/* quitar isConnected */}
+         {(connectedDevice && isConnected) && (
         <View style={styles.selectorContainer} >
          <TouchableOpacity
               style={styles.modeSelector}
@@ -658,9 +659,8 @@ const onBarTouch = useCallback(
                   : 'CAMBIAR A BOTONES'}
               </Text>
             </TouchableOpacity>         
-        </View>
-         
-
+        </View>         
+        )}
         { (connectedDevice && isConnected )? (
         <ImageBackground
                   source={require('./src/assets/bg-box.png')}
@@ -669,14 +669,14 @@ const onBarTouch = useCallback(
                 >
         <View style={styles.container}>  
            <View style={styles.buttonsContainer}>
-            
+             {controlMode === 'buttons' ? (
             <View style={styles.circularButtonWrapper}>
               <Image
                 source={require('./src/assets/bg-button.png')}
                 style={styles.circleImage}
                 resizeMode="contain"/>
-               {controlMode === 'buttons' ? (
-                <>
+              
+               
                   <View style={styles.dividerLineL} />
 
                   {/* 3) avanzar */}
@@ -701,18 +701,19 @@ const onBarTouch = useCallback(
                       
                     />
                   </TouchableOpacity>
-              </>
+              </View>
             ):(
-                <View style={styles.joystickContainer}>
-                    <View style={styles.joystickBackground}>
-                      <Text style={styles.joystickText}>MODO JOYSTICK</Text>
-                      <Text style={styles.joystickSubtext}>Próximamente...</Text>
-                      <View style={styles.joystickPlaceholder} />
-                    </View>
-                  </View>
-                  
+                <View style={styles.circularButtonWrapper}>
+                  <JoystickControl
+                    axis="vertical"
+                    padSize={200}
+                    knobSize={50}
+                    threshold={30}
+                    onMove={cmd => handleCommand(cmd)}
+                  />
+              </View>
             )}
-            </View>
+          
             {/* 4) Informcion de velocidad*/}
             <View style= {styles.speedContainer}>
                <Image
@@ -725,12 +726,15 @@ const onBarTouch = useCallback(
             </View>
               
             {/* derecha */}
+            
+            {controlMode === 'buttons' ? (
             <View style={styles.circularButtonWrapper}>
               <Image
                 source={require('./src/assets/bg-button.png')}
                 style={styles.circleImage}
                 resizeMode="contain"/>
-
+               
+              
               <View style={styles.dividerLineR} />    
               {/* izquierda*/}
               <TouchableOpacity
@@ -754,8 +758,20 @@ const onBarTouch = useCallback(
                   style={styles.arrowIcon}
                   resizeMode="contain"/>
               </TouchableOpacity>               
-
-            </View>
+             </View>
+               ):(
+                  <View style={styles.circularButtonWrapper}>
+                  
+                    <JoystickControl
+                      axis="horizontal"
+                      padSize={200}
+                      knobSize={50}
+                      threshold={30}
+                      onMove={cmd => handleCommand(cmd)}
+                    />
+                  </View>
+               )}
+           
           </View>
       </View>
       {/* 4) Control de velocidad*/}
