@@ -102,7 +102,7 @@ const App = () => {
         deviceConnectionRef.current.cancelConnection().catch(() => {});
       }
     };
-  }, [bleManager, connectedDevice]);
+  }, []);
 
   // Animación de pulso para botones
   const animatePulse = useCallback(() => {
@@ -444,7 +444,10 @@ const App = () => {
     async (command: DirectionCommand | SpeedCommand) => {
       animatePulse();
 
+      console.log(`[handleCommand] Comando original: ${command}`);
+
       if (!connectedDevice || !deviceConnectionRef.current) {
+        console.warn('[handleCommand] No hay dispositivo conectado.');
         Alert.alert(
           'Conectar Dispositivo',
           'Por favor conecta tu carrito primero',
@@ -466,26 +469,29 @@ const App = () => {
         return;
       }
 
-      console.log(`Comando enviado: ${command}`);
-
       try {
-        // Convertir el comando a un ArrayBuffer
+        // Convert command to Base64 (this is working correctly)
         const buffer = Buffer.from(command, 'utf-8');
         const base64Value = buffer.toString('base64');
 
-        // Escribir en la característica
+        console.log(
+          `[handleCommand] Comando: '${command}' -> Base64: '${base64Value}'`,
+        );
+
+        // Send the Base64 encoded command
         await deviceConnectionRef.current.writeCharacteristicWithResponseForService(
           SERVICE_UUID,
           CHARACTERISTIC_UUID,
           base64Value,
         );
 
-        console.log(`Comando ${command} enviado exitosamente`);
+        console.log(`[handleCommand] Comando enviado exitosamente`);
       } catch (error) {
-        console.error('Error enviando comando:', error);
-        Alert.alert('Error', 'No se pudo enviar el comando al dispositivo');
-
-        // Si hay error al enviar comando, asumimos desconexión
+        console.error('[handleCommand] Error enviando comando BLE:', error);
+        Alert.alert(
+          'Error',
+          'No se pudo enviar el comando al dispositivo. Intenta reconectar.',
+        );
         handleDisconnection();
       }
     },
@@ -546,7 +552,9 @@ const App = () => {
           <View style={styles.header}>
             <View style={styles.headerGlow}>
               <Text style={styles.headerTitle}>⚡ CAR REMOTE⚡</Text>
-              <Text style={styles.headerSubtitle}>ESP32 REMOTER CAR CONTROLLER</Text>
+              <Text style={styles.headerSubtitle}>
+                ESP32 REMOTER CAR CONTROLLER
+              </Text>
               <View style={styles.headerLine} />
               <View style={styles.bluetoothStatus}>
                 <View style={styles.statusIndicator}>
